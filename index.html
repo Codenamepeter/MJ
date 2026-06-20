@@ -1,0 +1,679 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#1f6feb" />
+<title>편의점 가격 비교 (CU·GS25·세븐일레븐)</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%231f6feb'/%3E%3Ctext x='32' y='44' font-size='34' text-anchor='middle' fill='white' font-family='sans-serif'%3E%E2%82%A9%3C/text%3E%3C/svg%3E" />
+<style>
+  :root{
+    --bg:#eef3fa; --card:#fff; --ink:#13202f; --sub:#5f7088; --line:#dde6f1;
+    --blue:#1f6feb; --good:#0a7d4d; --good-bg:#e7f7ef; --bad:#c0392b; --bad-bg:#fdeceb;
+    --warn:#8a5a00; --warn-bg:#fff4e0; --soft:#f5f9ff;
+    --cu:#7b2d8e; --gs:#0a7d4d; --se:#d35400;   /* 점포 색 */
+    --tap:60px; --radius:18px; --fs-base:18px;
+  }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{margin:0;background:var(--bg);color:var(--ink);font-size:var(--fs-base);
+    font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR","Segoe UI",Roboto,sans-serif;
+    line-height:1.55;word-break:keep-all;-webkit-font-smoothing:antialiased}
+  .wrap{width:min(740px,100%);margin:0 auto;padding:0 14px 96px}
+
+  header{background:var(--blue);color:#fff}
+  .head-in{width:min(740px,100%);margin:0 auto;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;gap:10px}
+  .head-in h1{margin:0;font-size:20px;letter-spacing:-.02em}
+  .head-in p{margin:3px 0 0;font-size:13.5px;opacity:.92}
+  .pdflink{flex:0 0 auto;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.35);
+    color:#fff;border-radius:11px;padding:9px 13px;font-size:13.5px;font-weight:700;cursor:pointer}
+
+  .searchwrap{position:sticky;top:0;z-index:25;background:var(--bg);padding:13px 0 7px}
+  .search input{width:100%;min-height:62px;border:3px solid var(--blue);border-radius:18px;
+    padding:0 18px;font-size:20px;background:#fff;box-shadow:0 6px 18px rgba(31,111,235,.12)}
+  .search input:focus{outline:5px solid rgba(31,111,235,.22)}
+
+  .legend{display:flex;gap:14px;flex-wrap:wrap;align-items:center;background:var(--card);
+    border:1px solid var(--line);border-radius:14px;padding:11px 14px;margin:6px 0 2px;font-size:14px;color:var(--sub)}
+  .legend .dot{display:inline-flex;align-items:center;gap:6px;font-weight:700}
+  .legend .sw{width:13px;height:13px;border-radius:4px;display:inline-block}
+  .legend .cheap{margin-left:auto;font-weight:700;color:var(--good)}
+  .legend .cheap .sw{background:var(--good-bg);border:2px solid var(--good)}
+
+  .navtitle{margin:18px 2px 8px;font-size:15px;color:var(--sub);font-weight:700}
+  .nav{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+  .nav button{min-height:56px;border:2px solid var(--line);background:#fff;color:var(--ink);
+    border-radius:15px;font-size:16px;font-weight:800;cursor:pointer;padding:0 8px;
+    display:flex;align-items:center;justify-content:center;line-height:1.2}
+  .nav button .n{font-size:12.5px;color:var(--sub);font-weight:700;margin-left:6px}
+  .nav button.on{background:var(--blue);color:#fff;border-color:var(--blue)} .nav button.on .n{color:rgba(255,255,255,.85)}
+  .nav button.flag{border-color:#f0bdb6;color:var(--bad)}
+  .nav button.flag.on{background:var(--bad);color:#fff;border-color:var(--bad)} .nav button.flag.on .n{color:rgba(255,255,255,.85)}
+  .nav button.all{grid-column:1/-1;background:var(--soft)}.nav button.all.on{background:var(--blue);color:#fff}
+
+  .cat{margin:22px 0 10px;display:flex;align-items:center;gap:10px}
+  .cat h3{margin:0;font-size:19px;letter-spacing:-.02em}
+  .cat .count{font-size:13.5px;color:var(--sub)}
+  .cat::before{content:"";width:7px;height:22px;border-radius:4px;background:var(--blue);flex:0 0 auto}
+
+  /* 상품 카드 = 3사 비교가 핵심 */
+  .item{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+    padding:14px 15px;margin-bottom:11px;box-shadow:0 3px 10px rgba(20,32,46,.04)}
+  .item-name{display:flex;justify-content:space-between;gap:10px;align-items:baseline}
+  .item-name h4{margin:0;font-size:18.5px;letter-spacing:-.02em}
+  .item-name .sz{font-size:13.5px;color:var(--sub);flex:0 0 auto}
+  .flagdot{display:inline-block;font-size:12px;font-weight:800;color:#fff;background:var(--bad);
+    border-radius:999px;padding:2px 8px;margin-left:6px;vertical-align:middle}
+
+  .verdict{margin:9px 0 11px;font-size:15px;font-weight:800;color:var(--good);
+    background:var(--good-bg);border-radius:11px;padding:9px 12px;display:flex;gap:8px;align-items:center}
+  .verdict.same{color:#1d4ed8;background:#eaf1ff}
+  .verdict.mine-bad{color:var(--bad);background:var(--bad-bg)}
+
+  /* 3사 가격 줄 */
+  .stores{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+  .store{border:1px solid var(--line);border-radius:13px;padding:10px 8px;text-align:center;position:relative;background:var(--soft)}
+  .store .who{font-size:13px;font-weight:800}
+  .store.cu .who{color:var(--cu)} .store.gs .who{color:var(--gs)} .store.se .who{color:var(--se)}
+  .store .amt{font-size:21px;font-weight:800;margin-top:2px}
+  .store.cheap{background:var(--good-bg);border:2px solid var(--good)}
+  .store.cheap .amt{color:var(--good)}
+  .store.na{background:#f4f6f8} .store.na .amt{font-size:14px;color:#9aa7b6;font-weight:700;margin-top:6px}
+  .store .badge{position:absolute;top:-9px;left:50%;transform:translateX(-50%);
+    font-size:11px;font-weight:800;color:#fff;background:var(--good);border-radius:999px;padding:2px 8px;white-space:nowrap}
+
+  /* 우리 매점가 (선택) */
+  .mine{margin-top:10px;display:flex;align-items:center;gap:10px;border-top:1px dashed var(--line);padding-top:11px}
+  .mine .lab{font-size:14px;color:var(--sub);font-weight:700;flex:0 0 auto}
+  .mine .box{flex:1;border:2px solid var(--blue);border-radius:12px;padding:9px 12px;cursor:pointer;
+    display:flex;justify-content:space-between;align-items:center;background:#fff}
+  .mine .box.has{border-color:var(--line)}
+  .mine .box .v{font-size:18px;font-weight:800}
+  .mine .box .v.todo{color:var(--blue);font-size:15px}
+  .mine .box .v.over{color:var(--bad)} .mine .box .v.ok{color:var(--good)}
+  .mine .box .tap{font-size:12.5px;color:var(--blue);font-weight:700}
+
+  .empty{padding:30px 18px;text-align:center;color:var(--sub);background:#fff;
+    border:1px dashed var(--line);border-radius:var(--radius);font-size:16px}
+
+  .backtop{position:fixed;right:16px;bottom:18px;z-index:40;background:var(--blue);color:#fff;
+    border:0;border-radius:999px;min-height:52px;padding:0 20px;font-size:15px;font-weight:800;
+    cursor:pointer;box-shadow:0 8px 20px rgba(31,111,235,.3)}
+
+  .toast{position:fixed;left:50%;bottom:84px;transform:translateX(-50%);background:#13202f;color:#fff;
+    padding:12px 19px;border-radius:999px;font-weight:700;z-index:60;opacity:0;pointer-events:none;
+    transition:.22s;max-width:90%;text-align:center;font-size:15px}
+  .toast.show{opacity:1}
+
+  .print{display:none}
+  @media print{
+    body{background:#fff}
+    header,.searchwrap,.legend,.navtitle,.nav,.cat,.grid,.backtop,.toast{display:none!important}
+    .wrap{padding:0;width:100%}
+    .print{display:block!important;font-family:"Noto Sans KR",sans-serif;color:#111}
+    .print h1{font-size:20px;margin:0 0 4px}
+    .print .sub{font-size:12px;color:#444;margin-bottom:12px}
+    .print table{width:100%;border-collapse:collapse;font-size:12px}
+    .print th,.print td{border:1px solid #555;padding:5px 6px;text-align:center}
+    .print th{background:#eee}.print td.name{text-align:left}
+    .print td.cheap{background:#e7f7ef;font-weight:700}
+    .print td.over{color:#c0392b;font-weight:700}
+    .print .cat-row td{background:#f4f4f4;font-weight:700;text-align:left}
+    .print .foot{font-size:11px;color:#555;margin-top:12px;line-height:1.6}
+  }
+  @media (min-width:640px){
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+    .grid .item{margin-bottom:0}
+    .nav{grid-template-columns:1fr 1fr 1fr}
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="head-in">
+    <div>
+      <h1>편의점 가격 비교</h1>
+      <p>CU · GS25 · 세븐일레븐 가격을 바로 비교합니다</p>
+    </div>
+    <button class="pdflink" id="pdfBtn" type="button">PDF 저장</button>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="searchwrap">
+    <div class="search">
+      <input id="q" type="search" inputmode="search" placeholder="상품 이름 검색 (예: 콜라, 새우깡)" autocomplete="off" />
+    </div>
+  </div>
+
+  <div class="legend">
+    <span class="dot"><span class="sw" style="background:var(--cu)"></span>CU</span>
+    <span class="dot"><span class="sw" style="background:var(--gs)"></span>GS25</span>
+    <span class="dot"><span class="sw" style="background:var(--se)"></span>세븐일레븐</span>
+    <span class="cheap"><span class="sw"></span>초록 = 가장 싼 곳</span>
+  </div>
+
+  <div class="navtitle" id="navtitle">분류를 누르세요</div>
+  <div class="nav" id="nav"></div>
+
+  <div id="list"></div>
+  <div id="empty" class="empty" style="display:none">찾는 상품이 없어요. 더 짧게 입력해 보세요.</div>
+</main>
+
+<button class="backtop" id="topBtn" type="button">맨 위로</button>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<div class="print" id="print"></div>
+
+<script>
+(() => {
+  "use strict";
+
+  /* 편의점 3사 가격 (이 파일에 저장 · 인터넷 불필요)
+     cu/gs/se = CU / GS25 / 세븐일레븐 가격(원). null = 미취급. */
+  const CATALOG = [
+{i:"p001",c:"탄산음료",n:"코카콜라 캔",s:"250ml",cu:1700,gs:1700,se:1700},
+{i:"p002",c:"탄산음료",n:"코카콜라 PET",s:"500ml",cu:2000,gs:2000,se:2000},
+{i:"p003",c:"탄산음료",n:"코카콜라 PET",s:"1.5L",cu:3500,gs:3400,se:3500},
+{i:"p004",c:"탄산음료",n:"코카콜라 제로 캔",s:"250ml",cu:1700,gs:1700,se:1700},
+{i:"p005",c:"탄산음료",n:"코카콜라 제로 PET",s:"500ml",cu:2000,gs:2000,se:2000},
+{i:"p006",c:"탄산음료",n:"코카콜라 제로 PET",s:"1.5L",cu:3500,gs:3400,se:3500},
+{i:"p007",c:"탄산음료",n:"펩시콜라 제로 캔",s:"355ml",cu:1800,gs:1800,se:1800},
+{i:"p008",c:"탄산음료",n:"펩시콜라 제로 PET",s:"500ml",cu:2000,gs:2000,se:2000},
+{i:"p009",c:"탄산음료",n:"펩시콜라 제로 라임 PET",s:"500ml",cu:2000,gs:2000,se:2000},
+{i:"p010",c:"탄산음료",n:"칠성사이다 캔",s:"250ml",cu:1700,gs:1700,se:1700},
+{i:"p011",c:"탄산음료",n:"칠성사이다 PET",s:"500ml",cu:2000,gs:2000,se:2000},
+{i:"p012",c:"탄산음료",n:"칠성사이다 PET",s:"1.5L",cu:3500,gs:3500,se:3600},
+{i:"p013",c:"탄산음료",n:"칠성사이다 제로 캔",s:"250ml",cu:1700,gs:1700,se:1700},
+{i:"p014",c:"탄산음료",n:"칠성사이다 제로 PET",s:"500ml",cu:2000,gs:2000,se:2000},
+{i:"p015",c:"탄산음료",n:"스프라이트 캔",s:"250ml",cu:1700,gs:1700,se:1700},
+{i:"p016",c:"탄산음료",n:"스프라이트 PET",s:"500ml",cu:2000,gs:2000,se:2000},
+{i:"p017",c:"탄산음료",n:"환타 오렌지 캔",s:"250ml",cu:1700,gs:1700,se:1700},
+{i:"p018",c:"탄산음료",n:"환타 오렌지 PET",s:"500ml",cu:2000,gs:2000,se:2000},
+{i:"p019",c:"탄산음료",n:"환타 포도 PET",s:"500ml",cu:2000,gs:2000,se:2000},
+{i:"p020",c:"탄산음료",n:"마운틴듀 캔",s:"355ml",cu:1800,gs:1800,se:1800},
+{i:"p021",c:"탄산음료",n:"마운틴듀 PET",s:"500ml",cu:2000,gs:2000,se:2000},
+{i:"p022",c:"탄산음료",n:"밀키스 캔",s:"250ml",cu:1700,gs:1700,se:1700},
+{i:"p023",c:"탄산음료",n:"밀키스 PET",s:"500ml",cu:2000,gs:2000,se:2000},
+{i:"p024",c:"탄산음료",n:"웰치스 포도 캔",s:"355ml",cu:1800,gs:1800,se:1800},
+{i:"p025",c:"탄산음료",n:"웰치스 오렌지 캔",s:"355ml",cu:1800,gs:1800,se:1800},
+{i:"p026",c:"탄산음료",n:"데미소다 애플 캔",s:"250ml",cu:1600,gs:1600,se:1600},
+{i:"p027",c:"탄산음료",n:"데미소다 복숭아 캔",s:"250ml",cu:1600,gs:1600,se:1600},
+{i:"p028",c:"탄산음료",n:"나랑드사이다 PET",s:"500ml",cu:1500,gs:1500,se:null},
+{i:"p029",c:"탄산음료",n:"트레비 레몬 PET",s:"500ml",cu:1700,gs:1700,se:null},
+{i:"p030",c:"탄산음료",n:"트레비 자몽 PET",s:"500ml",cu:1700,gs:1700,se:null},
+{i:"p031",c:"탄산음료",n:"갈아만든 배 캔",s:"238ml",cu:1500,gs:1500,se:1500},
+{i:"p032",c:"탄산음료",n:"암바사 PET",s:"500ml",cu:null,gs:2000,se:2000},
+{i:"p033",c:"탄산음료",n:"파워에이드 마운틴블라스트 PET",s:"600ml",cu:2200,gs:2200,se:2200},
+{i:"p034",c:"커피·차",n:"레쓰비 마일드 캔",s:"175ml",cu:1200,gs:1200,se:1200},
+{i:"p035",c:"커피·차",n:"레쓰비 그란데 라떼 PET",s:"500ml",cu:2200,gs:2200,se:2200},
+{i:"p036",c:"커피·차",n:"맥심 티오피 스위트아메리카노",s:"275ml",cu:1800,gs:1800,se:1800},
+{i:"p037",c:"커피·차",n:"맥심 티오피 라떼",s:"275ml",cu:1800,gs:1800,se:1800},
+{i:"p038",c:"커피·차",n:"맥심 티오피 블랙",s:"275ml",cu:1800,gs:1800,se:1800},
+{i:"p039",c:"커피·차",n:"칸타타 콘트라베이스 블랙 PET",s:"390ml",cu:2200,gs:2200,se:2200},
+{i:"p040",c:"커피·차",n:"칸타타 프리미엄 라떼 캔",s:"275ml",cu:1800,gs:1800,se:1800},
+{i:"p041",c:"커피·차",n:"조지아 오리지널 캔",s:"240ml",cu:1500,gs:1500,se:1500},
+{i:"p042",c:"커피·차",n:"스타벅스 더블샷 에스프레소 캔",s:"200ml",cu:2800,gs:2800,se:2800},
+{i:"p043",c:"커피·차",n:"스타벅스 도피오 블랙 PET",s:"355ml",cu:3500,gs:3500,se:3500},
+{i:"p044",c:"커피·차",n:"스타벅스 라떼 PET",s:"355ml",cu:3700,gs:3700,se:3700},
+{i:"p045",c:"커피·차",n:"빙그레 아카페라 라떼",s:"250ml",cu:1800,gs:1800,se:1800},
+{i:"p046",c:"커피·차",n:"남양 프렌치카페 카페오레",s:"300ml",cu:1800,gs:1800,se:1800},
+{i:"p047",c:"커피·차",n:"컴포즈 아메리카노 PET",s:"350ml",cu:2000,gs:null,se:2000},
+{i:"p048",c:"커피·차",n:"립톤 아이스티 복숭아 PET",s:"500ml",cu:1900,gs:1900,se:1900},
+{i:"p049",c:"커피·차",n:"네스티 복숭아 캔",s:"340ml",cu:1600,gs:1600,se:1600},
+{i:"p050",c:"커피·차",n:"광동 옥수수수염차 PET",s:"500ml",cu:1700,gs:1700,se:1700},
+{i:"p051",c:"커피·차",n:"광동 헛개차 PET",s:"500ml",cu:1700,gs:1700,se:1700},
+{i:"p052",c:"커피·차",n:"현미녹차 PET",s:"500ml",cu:1700,gs:1700,se:1700},
+{i:"p053",c:"커피·차",n:"하늘보리 PET",s:"500ml",cu:1500,gs:1500,se:1500},
+{i:"p054",c:"커피·차",n:"티젠 콤부차 레몬 PET",s:"500ml",cu:2000,gs:2000,se:2000},
+{i:"p055",c:"커피·차",n:"오설록 제주녹차 PET",s:"500ml",cu:null,gs:2200,se:null},
+{i:"p056",c:"커피·차",n:"공차 밀크티 PET",s:"500ml",cu:2800,gs:2800,se:null},
+{i:"p057",c:"주스·기타음료",n:"미닛메이드 오렌지 PET",s:"400ml",cu:2000,gs:2000,se:2000},
+{i:"p058",c:"주스·기타음료",n:"델몬트 오렌지 PET",s:"450ml",cu:2300,gs:2300,se:2300},
+{i:"p059",c:"주스·기타음료",n:"트로피카나 사과 PET",s:"500ml",cu:2300,gs:2300,se:2300},
+{i:"p060",c:"주스·기타음료",n:"아침에주스 사과 PET",s:"350ml",cu:2200,gs:2200,se:2200},
+{i:"p061",c:"주스·기타음료",n:"갈아만든 사과 PET",s:"500ml",cu:2000,gs:2000,se:2000},
+{i:"p062",c:"주스·기타음료",n:"포카리스웨트 PET",s:"500ml",cu:2000,gs:2000,se:2000},
+{i:"p063",c:"주스·기타음료",n:"포카리스웨트 캔",s:"250ml",cu:1500,gs:1500,se:1500},
+{i:"p064",c:"주스·기타음료",n:"게토레이 레몬 PET",s:"600ml",cu:2200,gs:2200,se:2200},
+{i:"p065",c:"주스·기타음료",n:"파워에이드 PET",s:"600ml",cu:2200,gs:2200,se:2200},
+{i:"p066",c:"주스·기타음료",n:"비타500 병",s:"100ml",cu:1200,gs:1200,se:1200},
+{i:"p067",c:"주스·기타음료",n:"박카스맛 비타민음료 캔",s:"250ml",cu:1300,gs:1300,se:1300},
+{i:"p068",c:"주스·기타음료",n:"핫식스 캔",s:"250ml",cu:1700,gs:1700,se:1700},
+{i:"p069",c:"주스·기타음료",n:"몬스터에너지 캔",s:"355ml",cu:2500,gs:2500,se:2500},
+{i:"p070",c:"주스·기타음료",n:"몬스터에너지 울트라 캔",s:"355ml",cu:2500,gs:2500,se:2500},
+{i:"p071",c:"주스·기타음료",n:"레드불 캔",s:"250ml",cu:2900,gs:2900,se:2900},
+{i:"p072",c:"주스·기타음료",n:"쿨피스 복숭아 PET",s:"500ml",cu:1500,gs:1500,se:1500},
+{i:"p073",c:"주스·기타음료",n:"마이쮸 음료 PET",s:"500ml",cu:null,gs:1800,se:1800},
+{i:"p074",c:"주스·기타음료",n:"쌕쌕 오렌지 캔",s:"238ml",cu:1400,gs:1400,se:1400},
+{i:"p075",c:"주스·기타음료",n:"봉봉 포도 캔",s:"238ml",cu:1400,gs:1400,se:1400},
+{i:"p076",c:"주스·기타음료",n:"코코팜 화이트 PET",s:"340ml",cu:1700,gs:1700,se:1700},
+{i:"p077",c:"주스·기타음료",n:"데자와 밀크티 캔",s:"240ml",cu:1600,gs:1600,se:1600},
+{i:"p078",c:"주스·기타음료",n:"솔의눈 캔",s:"240ml",cu:1300,gs:1300,se:1300},
+{i:"p079",c:"주스·기타음료",n:"아침햇살 PET",s:"500ml",cu:1800,gs:1800,se:1800},
+{i:"p080",c:"생수",n:"제주삼다수 PET",s:"500ml",cu:1100,gs:1050,se:1100},
+{i:"p081",c:"생수",n:"제주삼다수 PET",s:"2L",cu:1800,gs:1800,se:1800},
+{i:"p082",c:"생수",n:"아이시스 PET",s:"500ml",cu:1000,gs:1000,se:1000},
+{i:"p083",c:"생수",n:"아이시스 PET",s:"2L",cu:1600,gs:1600,se:1600},
+{i:"p084",c:"생수",n:"백산수 PET",s:"500ml",cu:1000,gs:1000,se:1000},
+{i:"p085",c:"생수",n:"백산수 PET",s:"2L",cu:1600,gs:1600,se:1600},
+{i:"p086",c:"생수",n:"평창수 PET",s:"500ml",cu:1000,gs:1000,se:null},
+{i:"p087",c:"생수",n:"스파클 PET",s:"500ml",cu:900,gs:null,se:900},
+{i:"p088",c:"생수",n:"트레비 플레인 PET",s:"500ml",cu:1700,gs:1700,se:null},
+{i:"p089",c:"생수",n:"에비앙 PET",s:"500ml",cu:2500,gs:2500,se:2500},
+{i:"p090",c:"생수",n:"볼빅 PET",s:"500ml",cu:null,gs:2000,se:2000},
+{i:"p091",c:"유제품·유음료",n:"빙그레 바나나맛우유",s:"240ml",cu:1800,gs:1800,se:1800},
+{i:"p092",c:"유제품·유음료",n:"빙그레 바나나맛우유 라이트",s:"240ml",cu:1800,gs:1800,se:1800},
+{i:"p093",c:"유제품·유음료",n:"빙그레 딸기맛우유",s:"240ml",cu:1800,gs:1800,se:1800},
+{i:"p094",c:"유제품·유음료",n:"빙그레 메로나맛우유",s:"240ml",cu:1800,gs:1800,se:1800},
+{i:"p095",c:"유제품·유음료",n:"빙그레 커피맛우유",s:"240ml",cu:1800,gs:1800,se:1800},
+{i:"p096",c:"유제품·유음료",n:"매일 허쉬 초코드링크",s:"235ml",cu:1600,gs:1600,se:1600},
+{i:"p097",c:"유제품·유음료",n:"매일 허쉬 쿠키앤크림 드링크",s:"235ml",cu:1600,gs:1600,se:1600},
+{i:"p098",c:"유제품·유음료",n:"남양 초코에몽 드링크",s:"190ml",cu:1400,gs:1400,se:1400},
+{i:"p099",c:"유제품·유음료",n:"남양 딸기에몽 드링크",s:"190ml",cu:1400,gs:1400,se:1400},
+{i:"p100",c:"유제품·유음료",n:"서울우유 흰우유",s:"200ml",cu:1200,gs:1200,se:1200},
+{i:"p101",c:"유제품·유음료",n:"서울우유 초코우유",s:"200ml",cu:1300,gs:1300,se:1300},
+{i:"p102",c:"유제품·유음료",n:"서울우유 딸기우유",s:"200ml",cu:1300,gs:1300,se:1300},
+{i:"p103",c:"유제품·유음료",n:"매일우유 흰우유",s:"200ml",cu:1200,gs:1200,se:1200},
+{i:"p104",c:"유제품·유음료",n:"연세우유 초코",s:"200ml",cu:1300,gs:1300,se:1300},
+{i:"p105",c:"유제품·유음료",n:"매일 바이오 딸기 마시는요구르트",s:"200ml",cu:1500,gs:1500,se:1500},
+{i:"p106",c:"유제품·유음료",n:"불가리스 딸기",s:"150ml",cu:1300,gs:1300,se:1300},
+{i:"p107",c:"유제품·유음료",n:"요플레 오리지널 딸기",s:"85g",cu:1000,gs:1000,se:1000},
+{i:"p108",c:"유제품·유음료",n:"요플레 복숭아",s:"85g",cu:1000,gs:1000,se:1000},
+{i:"p109",c:"유제품·유음료",n:"덴마크 드링킹요구르트 딸기",s:"240ml",cu:2000,gs:2000,se:2000},
+{i:"p110",c:"유제품·유음료",n:"liveGreen 검은콩두유",s:"190ml",cu:1300,gs:1300,se:1300},
+{i:"p111",c:"유제품·유음료",n:"베지밀 검은콩두유",s:"190ml",cu:1300,gs:1300,se:1300},
+{i:"p112",c:"유제품·유음료",n:"베지밀 달콤두유",s:"190ml",cu:1300,gs:1300,se:1300},
+{i:"p113",c:"유제품·유음료",n:"아몬드브리즈 오리지널",s:"190ml",cu:1500,gs:1500,se:1500},
+{i:"p114",c:"유제품·유음료",n:"요구르트 윌",s:"100ml",cu:1600,gs:1600,se:1600},
+{i:"p115",c:"봉지과자",n:"오리온 포카칩 오리지널",s:"66g",cu:1700,gs:1700,se:1700},
+{i:"p116",c:"봉지과자",n:"오리온 포카칩 어니언",s:"66g",cu:1700,gs:1700,se:1700},
+{i:"p117",c:"봉지과자",n:"오리온 포카칩 스윗치즈",s:"66g",cu:1700,gs:1700,se:1700},
+{i:"p118",c:"봉지과자",n:"오리온 꼬북칩 콘초",s:"80g",cu:1700,gs:1700,se:1700},
+{i:"p119",c:"봉지과자",n:"오리온 꼬북칩 콘스프",s:"65g",cu:1700,gs:1700,se:1700},
+{i:"p120",c:"봉지과자",n:"오리온 스윙칩 볶음양념",s:"80g",cu:1700,gs:1700,se:1700},
+{i:"p121",c:"봉지과자",n:"오리온 오징어땅콩",s:"98g",cu:1700,gs:1700,se:1700},
+{i:"p122",c:"봉지과자",n:"오리온 치킨팝 고소한맛",s:"60g",cu:1700,gs:1700,se:1700},
+{i:"p123",c:"봉지과자",n:"농심 새우깡",s:"90g",cu:1500,gs:1500,se:1500},
+{i:"p124",c:"봉지과자",n:"농심 매운새우깡",s:"90g",cu:1500,gs:1500,se:1500},
+{i:"p125",c:"봉지과자",n:"농심 양파링",s:"84g",cu:1500,gs:1500,se:1500},
+{i:"p126",c:"봉지과자",n:"농심 바나나킥",s:"75g",cu:1700,gs:1700,se:1700},
+{i:"p127",c:"봉지과자",n:"농심 꿀꽈배기",s:"90g",cu:1700,gs:1700,se:1700},
+{i:"p128",c:"봉지과자",n:"농심 먹태깡",s:"60g",cu:1700,gs:1700,se:1700},
+{i:"p129",c:"봉지과자",n:"농심 자갈치",s:"90g",cu:1500,gs:1500,se:1500},
+{i:"p130",c:"봉지과자",n:"농심 조청유과",s:"96g",cu:1700,gs:1700,se:1700},
+{i:"p131",c:"봉지과자",n:"롯데 꼬깔콘 고소한맛",s:"67g",cu:1700,gs:1700,se:1700},
+{i:"p132",c:"봉지과자",n:"롯데 꼬깔콘 군옥수수",s:"67g",cu:1700,gs:1700,se:1700},
+{i:"p133",c:"봉지과자",n:"롯데 빠다코코낫",s:"100g",cu:2000,gs:2000,se:2000},
+{i:"p134",c:"봉지과자",n:"해태 허니버터칩",s:"60g",cu:1700,gs:1700,se:1700},
+{i:"p135",c:"봉지과자",n:"해태 맛동산",s:"90g",cu:1700,gs:1700,se:1700},
+{i:"p136",c:"봉지과자",n:"빙그레 꽃게랑",s:"70g",cu:1500,gs:1500,se:1500},
+{i:"p137",c:"봉지과자",n:"크라운 콘칩",s:"70g",cu:1700,gs:1700,se:1700},
+{i:"p138",c:"봉지과자",n:"크라운 카라멜콘땅콩",s:"72g",cu:1700,gs:1700,se:1700},
+{i:"p139",c:"봉지과자",n:"오리온 고래밥 볶음양념",s:"40g",cu:1200,gs:1200,se:1200},
+{i:"p140",c:"봉지과자",n:"오리온 썬 오리지널",s:"135g",cu:1700,gs:1700,se:1700},
+{i:"p141",c:"비스킷·쿠키·파이",n:"오리온 비쵸비",s:"125g",cu:3600,gs:3600,se:3600},
+{i:"p142",c:"비스킷·쿠키·파이",n:"오리온 초코칩쿠키",s:"104g",cu:1600,gs:1600,se:1600},
+{i:"p143",c:"비스킷·쿠키·파이",n:"오리온 다이제 초코",s:"194g",cu:3000,gs:3000,se:3000},
+{i:"p144",c:"비스킷·쿠키·파이",n:"오리온 다이제 오리지널",s:"176g",cu:3000,gs:3000,se:3000},
+{i:"p145",c:"비스킷·쿠키·파이",n:"오리온 촉촉한 초코칩",s:"240g",cu:3500,gs:3500,se:3500},
+{i:"p146",c:"비스킷·쿠키·파이",n:"오리온 초코파이",s:"12입",cu:6000,gs:6000,se:6000},
+{i:"p147",c:"비스킷·쿠키·파이",n:"오리온 카스타드",s:"6입",cu:4000,gs:4000,se:4000},
+{i:"p148",c:"비스킷·쿠키·파이",n:"롯데 몽쉘 오리지널",s:"6입",cu:3300,gs:3300,se:3300},
+{i:"p149",c:"비스킷·쿠키·파이",n:"롯데 몽쉘 카카오",s:"6입",cu:3300,gs:3300,se:3300},
+{i:"p150",c:"비스킷·쿠키·파이",n:"해태 초코홈런볼",s:"46g",cu:1900,gs:1900,se:1900},
+{i:"p151",c:"비스킷·쿠키·파이",n:"해태 오예스",s:"360g",cu:6600,gs:6600,se:6600},
+{i:"p152",c:"비스킷·쿠키·파이",n:"해태 에이스",s:"121g",cu:2000,gs:2000,se:2000},
+{i:"p153",c:"비스킷·쿠키·파이",n:"해태 사브레",s:"100g",cu:2000,gs:2000,se:2000},
+{i:"p154",c:"비스킷·쿠키·파이",n:"해태 버터링",s:"86g",cu:2000,gs:2000,se:2000},
+{i:"p155",c:"비스킷·쿠키·파이",n:"크라운 쿠크다스 커피",s:"60g",cu:2000,gs:2000,se:2000},
+{i:"p156",c:"비스킷·쿠키·파이",n:"크라운 화이트하임",s:"142g",cu:3500,gs:3500,se:3500},
+{i:"p157",c:"비스킷·쿠키·파이",n:"크라운 참크래커",s:"280g",cu:3000,gs:3000,se:3000},
+{i:"p158",c:"비스킷·쿠키·파이",n:"크라운 빅파이",s:"6입",cu:3000,gs:3000,se:3000},
+{i:"p159",c:"비스킷·쿠키·파이",n:"롯데 칙촉 오리지널",s:"90g",cu:2500,gs:2500,se:2500},
+{i:"p160",c:"비스킷·쿠키·파이",n:"롯데 마가렛트",s:"8입",cu:3500,gs:3500,se:3500},
+{i:"p161",c:"비스킷·쿠키·파이",n:"오리온 예감 오리지널",s:"64g",cu:1700,gs:1700,se:1700},
+{i:"p162",c:"초콜릿류",n:"롯데 가나초콜릿 마일드",s:"34g",cu:2000,gs:2000,se:2000},
+{i:"p163",c:"초콜릿류",n:"롯데 가나초콜릿 마일드 빅",s:"70g",cu:3500,gs:3500,se:3500},
+{i:"p164",c:"초콜릿류",n:"롯데 가나초콜릿 다크",s:"34g",cu:2000,gs:2000,se:2000},
+{i:"p165",c:"초콜릿류",n:"롯데 빈츠",s:"102g",cu:3500,gs:3500,se:3500},
+{i:"p166",c:"초콜릿류",n:"롯데 ABC초콜릿",s:"187g",cu:5500,gs:5500,se:5500},
+{i:"p167",c:"초콜릿류",n:"롯데 크런키",s:"34g",cu:1500,gs:1500,se:1500},
+{i:"p168",c:"초콜릿류",n:"롯데 가나 디저트",s:"60g",cu:3000,gs:3000,se:3000},
+{i:"p169",c:"초콜릿류",n:"오리온 투유 다크",s:"45g",cu:2000,gs:2000,se:2000},
+{i:"p170",c:"초콜릿류",n:"오리온 투유 마일드",s:"45g",cu:2000,gs:2000,se:2000},
+{i:"p171",c:"초콜릿류",n:"해태 자유시간",s:"55g",cu:1500,gs:1500,se:1500},
+{i:"p172",c:"초콜릿류",n:"롯데 빼빼로 오리지널",s:"54g",cu:2000,gs:2000,se:2000},
+{i:"p173",c:"초콜릿류",n:"롯데 빼빼로 아몬드",s:"32g",cu:2000,gs:2000,se:2000},
+{i:"p174",c:"초콜릿류",n:"롯데 빼빼로 누드",s:"50g",cu:2000,gs:2000,se:2000},
+{i:"p175",c:"초콜릿류",n:"페레로로쉐 3구",s:"37.5g",cu:3500,gs:3500,se:3500},
+{i:"p176",c:"초콜릿류",n:"킨더 초콜릿",s:"50g",cu:2500,gs:2500,se:2500},
+{i:"p177",c:"초콜릿류",n:"킨더 부에노",s:"43g",cu:2500,gs:2500,se:2500},
+{i:"p178",c:"초콜릿류",n:"엠앤엠즈 밀크",s:"40g",cu:2000,gs:2000,se:2000},
+{i:"p179",c:"초콜릿류",n:"트윅스",s:"50g",cu:2000,gs:2000,se:2000},
+{i:"p180",c:"초콜릿류",n:"스니커즈",s:"51g",cu:2000,gs:2000,se:2000},
+{i:"p181",c:"초콜릿류",n:"허쉬 쿠키앤크림",s:"43g",cu:2000,gs:2000,se:2000},
+{i:"p182",c:"초콜릿류",n:"허쉬 밀크초콜릿",s:"43g",cu:2000,gs:2000,se:2000},
+{i:"p183",c:"초콜릿류",n:"토블론 밀크",s:"35g",cu:null,gs:2500,se:2500},
+{i:"p184",c:"사탕·젤리·껌",n:"오리온 마이구미 포도",s:"41g",cu:1000,gs:1000,se:1000},
+{i:"p185",c:"사탕·젤리·껌",n:"오리온 마이구미 딸기",s:"41g",cu:1000,gs:1000,se:1000},
+{i:"p186",c:"사탕·젤리·껌",n:"크라운 새콤달콤 딸기",s:"29g",cu:1000,gs:1000,se:1000},
+{i:"p187",c:"사탕·젤리·껌",n:"크라운 새콤달콤 포도",s:"29g",cu:1000,gs:1000,se:1000},
+{i:"p188",c:"사탕·젤리·껌",n:"롯데 요구르트젤리",s:"48g",cu:1500,gs:1500,se:1500},
+{i:"p189",c:"사탕·젤리·껌",n:"하리보 골드베렌",s:"100g",cu:3000,gs:3000,se:3000},
+{i:"p190",c:"사탕·젤리·껌",n:"하리보 골드베렌 미니",s:"30g",cu:1200,gs:1200,se:1200},
+{i:"p191",c:"사탕·젤리·껌",n:"하리보 해피콜라",s:"100g",cu:3000,gs:3000,se:3000},
+{i:"p192",c:"사탕·젤리·껌",n:"트롤리 지렁이젤리",s:"100g",cu:2500,gs:2500,se:2500},
+{i:"p193",c:"사탕·젤리·껌",n:"츄파춥스 낱개",s:"1개",cu:500,gs:500,se:500},
+{i:"p194",c:"사탕·젤리·껌",n:"멘토스 민트",s:"37g",cu:1000,gs:1000,se:1000},
+{i:"p195",c:"사탕·젤리·껌",n:"멘토스 과일",s:"37g",cu:1000,gs:1000,se:1000},
+{i:"p196",c:"사탕·젤리·껌",n:"에클립스 민트 용기",s:"34g",cu:2500,gs:2500,se:2500},
+{i:"p197",c:"사탕·젤리·껌",n:"마이쮸 포도",s:"44g",cu:1200,gs:1200,se:1200},
+{i:"p198",c:"사탕·젤리·껌",n:"마이쮸 딸기",s:"44g",cu:1200,gs:1200,se:1200},
+{i:"p199",c:"사탕·젤리·껌",n:"왕꿈틀이 젤리",s:"69g",cu:1800,gs:1800,se:1800},
+{i:"p200",c:"사탕·젤리·껌",n:"롯데 왓따 풍선껌",s:"1개",cu:500,gs:500,se:500},
+{i:"p201",c:"사탕·젤리·껌",n:"롯데 자일리톨 후레쉬민트 용기",s:"87g",cu:5000,gs:5000,se:5000},
+{i:"p202",c:"사탕·젤리·껌",n:"롯데 자일리톨 블루베리 용기",s:"87g",cu:5000,gs:5000,se:5000},
+{i:"p203",c:"사탕·젤리·껌",n:"롯데 자일리톨 오리지날 판",s:"낱개",cu:1000,gs:1000,se:1000},
+{i:"p204",c:"사탕·젤리·껌",n:"롯데 후라보노 판",s:"낱개",cu:1000,gs:1000,se:1000},
+{i:"p205",c:"사탕·젤리·껌",n:"해태 덴티큐 자일리톨",s:"낱개",cu:1000,gs:1000,se:1000},
+{i:"p206",c:"사탕·젤리·껌",n:"롯데 스피아민트 판",s:"낱개",cu:1000,gs:1000,se:1000},
+{i:"p207",c:"빙과류",n:"빙그레 메로나",s:"1개",cu:1000,gs:1000,se:1000},
+{i:"p208",c:"빙과류",n:"빙그레 메로나 딸기",s:"1개",cu:1000,gs:1000,se:1000},
+{i:"p209",c:"빙과류",n:"빙그레 붕어싸만코",s:"1개",cu:2000,gs:2000,se:2000},
+{i:"p210",c:"빙과류",n:"빙그레 빵빠레",s:"1개",cu:2500,gs:2500,se:2500},
+{i:"p211",c:"빙과류",n:"빙그레 더위사냥",s:"1개",cu:1200,gs:1200,se:1200},
+{i:"p212",c:"빙과류",n:"빙그레 요맘때콘",s:"1개",cu:2500,gs:2500,se:2500},
+{i:"p213",c:"빙과류",n:"빙그레 비비빅",s:"1개",cu:1200,gs:1200,se:1200},
+{i:"p214",c:"빙과류",n:"빙그레 투게더 미니",s:"1개",cu:3000,gs:3000,se:3000},
+{i:"p215",c:"빙과류",n:"롯데 월드콘",s:"1개",cu:2500,gs:2500,se:2500},
+{i:"p216",c:"빙과류",n:"롯데 구구콘",s:"1개",cu:2500,gs:2500,se:2500},
+{i:"p217",c:"빙과류",n:"롯데 설레임",s:"1개",cu:2500,gs:2500,se:2500},
+{i:"p218",c:"빙과류",n:"롯데 죠스바",s:"1개",cu:1500,gs:1500,se:1500},
+{i:"p219",c:"빙과류",n:"롯데 수박바",s:"1개",cu:1500,gs:1500,se:1500},
+{i:"p220",c:"빙과류",n:"롯데 스크류바",s:"1개",cu:1500,gs:1500,se:1500},
+{i:"p221",c:"빙과류",n:"롯데 빠삐코",s:"1개",cu:1800,gs:1800,se:1800},
+{i:"p222",c:"빙과류",n:"롯데 찰떡아이스",s:"1개",cu:2200,gs:2200,se:2200},
+{i:"p223",c:"빙과류",n:"롯데 뽕따",s:"1개",cu:1800,gs:1800,se:1800},
+{i:"p224",c:"빙과류",n:"롯데 옥동자",s:"1개",cu:1500,gs:1500,se:1500},
+{i:"p225",c:"빙과류",n:"해태 부라보콘",s:"1개",cu:2500,gs:2500,se:2500},
+{i:"p226",c:"빙과류",n:"해태 누가바",s:"1개",cu:1500,gs:1500,se:1500},
+{i:"p227",c:"빙과류",n:"해태 바밤바",s:"1개",cu:1500,gs:1500,se:1500},
+{i:"p228",c:"빙과류",n:"해태 호두마루",s:"1개",cu:2500,gs:2500,se:2500},
+{i:"p229",c:"빙과류",n:"하겐다즈 미니컵",s:"1개",cu:6000,gs:6000,se:6000},
+{i:"p230",c:"빙과류",n:"나뚜루 컵",s:"1개",cu:null,gs:null,se:4500},
+{i:"p231",c:"빵류",n:"삼립 크림빵",s:"1개",cu:1500,gs:1500,se:1500},
+{i:"p232",c:"빵류",n:"삼립 정통크림빵",s:"1개",cu:1800,gs:1800,se:1800},
+{i:"p233",c:"빵류",n:"삼립 단팥빵",s:"1개",cu:1500,gs:1500,se:1500},
+{i:"p234",c:"빵류",n:"삼립 보름달",s:"1개",cu:1500,gs:1500,se:1500},
+{i:"p235",c:"빵류",n:"삼립 누네띠네",s:"1개",cu:1700,gs:1700,se:1700},
+{i:"p236",c:"빵류",n:"삼립 호빵 단팥",s:"1개",cu:1500,gs:1500,se:1500},
+{i:"p237",c:"빵류",n:"기린 카스타드 케이크",s:"1개",cu:1500,gs:1500,se:1500},
+{i:"p238",c:"빵류",n:"롯데 야채빵",s:"1개",cu:1800,gs:1800,se:1800},
+{i:"p239",c:"빵류",n:"롯데 소보로빵",s:"1개",cu:1700,gs:1700,se:1700},
+{i:"p240",c:"빵류",n:"파리바게뜨 카스텔라",s:"1개",cu:null,gs:2500,se:null},
+{i:"p241",c:"빵류",n:"오뜨 초코케이크",s:"2입",cu:2000,gs:2000,se:2000},
+{i:"p242",c:"빵류",n:"베이커리 소시지빵",s:"1개",cu:2500,gs:2500,se:2500},
+{i:"p243",c:"컵라면·간편식",n:"농심 신라면 작은컵",s:"1개",cu:1250,gs:1250,se:1250},
+{i:"p244",c:"컵라면·간편식",n:"농심 신라면 큰사발",s:"1개",cu:1500,gs:1500,se:1500},
+{i:"p245",c:"컵라면·간편식",n:"농심 신라면 더레드 큰사발",s:"1개",cu:1800,gs:1800,se:1800},
+{i:"p246",c:"컵라면·간편식",n:"농심 너구리 컵",s:"1개",cu:1250,gs:1250,se:1250},
+{i:"p247",c:"컵라면·간편식",n:"농심 짜파게티 큰컵",s:"1개",cu:1500,gs:1500,se:1500},
+{i:"p248",c:"컵라면·간편식",n:"농심 육개장사발면",s:"1개",cu:1100,gs:1100,se:1100},
+{i:"p249",c:"컵라면·간편식",n:"농심 새우탕 큰사발",s:"1개",cu:1500,gs:1500,se:1500},
+{i:"p250",c:"컵라면·간편식",n:"오뚜기 진라면 작은컵",s:"1개",cu:1100,gs:1100,se:1100},
+{i:"p251",c:"컵라면·간편식",n:"오뚜기 진라면 큰컵",s:"1개",cu:1500,gs:1500,se:1500},
+{i:"p252",c:"컵라면·간편식",n:"오뚜기 참깨라면 컵",s:"1개",cu:1400,gs:1400,se:1400},
+{i:"p253",c:"컵라면·간편식",n:"팔도 비빔면 컵",s:"1개",cu:1500,gs:1500,se:1500},
+{i:"p254",c:"컵라면·간편식",n:"팔도 도시락",s:"1개",cu:1300,gs:1300,se:1300},
+{i:"p255",c:"컵라면·간편식",n:"삼양 불닭볶음면 큰컵",s:"1개",cu:1700,gs:1700,se:1700},
+{i:"p256",c:"컵라면·간편식",n:"삼양 까르보불닭 큰컵",s:"1개",cu:1700,gs:1700,se:1700},
+{i:"p257",c:"컵라면·간편식",n:"참치마요 삼각김밥",s:"1개",cu:1100,gs:1100,se:1200},
+{i:"p258",c:"컵라면·간편식",n:"전주비빔 삼각김밥",s:"1개",cu:1200,gs:1200,se:1200},
+{i:"p259",c:"컵라면·간편식",n:"스팸마요 삼각김밥",s:"1개",cu:1300,gs:1300,se:1300},
+{i:"p260",c:"컵라면·간편식",n:"스팸마요 김밥",s:"1개",cu:1800,gs:1800,se:1800},
+{i:"p261",c:"컵라면·간편식",n:"참치마요 김밥",s:"1개",cu:1800,gs:1800,se:1800},
+{i:"p262",c:"컵라면·간편식",n:"핫바 오리지널",s:"1개",cu:2500,gs:2500,se:2500},
+{i:"p263",c:"컵라면·간편식",n:"치즈 핫도그",s:"1개",cu:2500,gs:2500,se:2500},
+{i:"p264",c:"컵라면·간편식",n:"훈제계란 2입",s:"2개",cu:2000,gs:2000,se:2000},
+{i:"p265",c:"문구류",n:"모나미 153 볼펜 흑",s:"1개",cu:500,gs:500,se:500},
+{i:"p266",c:"문구류",n:"제트스트림 볼펜",s:"1개",cu:2500,gs:2500,se:2500},
+{i:"p267",c:"문구류",n:"하이테크 펜",s:"1개",cu:2500,gs:2500,se:2500},
+{i:"p268",c:"문구류",n:"유성매직 흑",s:"1개",cu:1000,gs:1000,se:1000},
+{i:"p269",c:"문구류",n:"형광펜",s:"1개",cu:1000,gs:1000,se:1000},
+{i:"p270",c:"문구류",n:"연필 2B",s:"1개",cu:500,gs:500,se:500},
+{i:"p271",c:"문구류",n:"샤프 0.5",s:"1개",cu:2000,gs:2000,se:2000},
+{i:"p272",c:"문구류",n:"지우개",s:"1개",cu:500,gs:500,se:500},
+{i:"p273",c:"문구류",n:"수정테이프",s:"1개",cu:2000,gs:2000,se:2000},
+{i:"p274",c:"문구류",n:"포스트잇",s:"1개",cu:2500,gs:2500,se:2500},
+{i:"p275",c:"문구류",n:"A4 노트",s:"1권",cu:2000,gs:2000,se:2000},
+{i:"p276",c:"문구류",n:"스카치테이프",s:"1개",cu:1500,gs:1500,se:1500},
+{i:"p277",c:"문구류",n:"가위",s:"1개",cu:2000,gs:2000,se:2000},
+{i:"p278",c:"문구류",n:"건전지 AA 2입",s:"2개",cu:3000,gs:3000,se:3000},
+{i:"p279",c:"위생·생활",n:"미니 물티슈",s:"1개",cu:1000,gs:1000,se:1000},
+{i:"p280",c:"위생·생활",n:"휴대용 티슈",s:"1개",cu:800,gs:800,se:800},
+{i:"p281",c:"위생·생활",n:"일회용 마스크",s:"1개",cu:1000,gs:1000,se:1000},
+{i:"p282",c:"위생·생활",n:"KF94 마스크",s:"1개",cu:1500,gs:1500,se:1500},
+{i:"p283",c:"위생·생활",n:"밴드",s:"1통",cu:2000,gs:2000,se:2000},
+{i:"p284",c:"위생·생활",n:"손소독제 미니",s:"1개",cu:2500,gs:2500,se:2500},
+{i:"p285",c:"위생·생활",n:"우산 3단",s:"1개",cu:10000,gs:10000,se:10000},
+{i:"p286",c:"위생·생활",n:"일회용 우비",s:"1개",cu:2000,gs:2000,se:2000},
+{i:"p287",c:"위생·생활",n:"스타킹",s:"1개",cu:2000,gs:2000,se:2000},
+{i:"p288",c:"위생·생활",n:"칫솔",s:"1개",cu:2500,gs:2500,se:2500},
+{i:"p289",c:"위생·생활",n:"치약 미니",s:"1개",cu:2000,gs:2000,se:2000}
+];
+  const CAT_ORDER = ["탄산음료", "커피·차", "주스·기타음료", "생수", "유제품·유음료", "봉지과자", "비스킷·쿠키·파이", "초콜릿류", "사탕·젤리·껌", "빙과류", "빵류", "컵라면·간편식", "문구류", "위생·생활"];
+
+  const FLAGGED = new Set([
+    "빙그레 바나나맛우유","매일 허쉬 초코드링크","해태 오예스",
+    "오리온 비쵸비","오리온 초코칩쿠키","롯데 몽쉘 오리지널","해태 초코홈런볼"
+  ]);
+  const STORE_LABEL = { cu:"CU", gs:"GS25", se:"세븐일레븐" };
+  const STORE_CLASS = { cu:"cu", gs:"gs", se:"se" };
+  const SAVE_KEY = "hwasung.compare.mine.v4";
+  const $ = id => document.getElementById(id);
+
+  let mine = {};
+  try { mine = JSON.parse(localStorage.getItem(SAVE_KEY) || "{}") || {}; } catch(e){ mine = {}; }
+  function persist(){ try{ localStorage.setItem(SAVE_KEY, JSON.stringify(mine)); }catch(e){} }
+
+  const won = n => (Number(n)||0).toLocaleString("ko-KR") + "원";
+  function esc(s){ return String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c])); }
+  function norm(s){ return String(s||"").replace(/\s/g,"").toLowerCase(); }
+  function isFlag(it){ return FLAGGED.has(it.n); }
+
+  function storeVals(it){ return { cu:it.cu, gs:it.gs, se:it.se }; }
+  function available(it){ // [{k,v}] for stores that carry it
+    const v=storeVals(it); const out=[];
+    for(const k of ["cu","gs","se"]) if(v[k]!=null) out.push({k, v:v[k]});
+    return out;
+  }
+  function minPrice(it){ const a=available(it).map(x=>x.v); return a.length?Math.min(...a):null; }
+  function maxPrice(it){ const a=available(it).map(x=>x.v); return a.length?Math.max(...a):null; }
+  function allSame(it){ const a=available(it).map(x=>x.v); return a.length>0 && new Set(a).size===1; }
+
+  function minePrice(it){ const v=mine[it.i]; return (v==null||v==="")?null:Number(v); }
+
+  // 3사 비교 한 줄 평
+  function verdictText(it){
+    const av = available(it);
+    if(!av.length) return {cls:"same", txt:"세 곳 모두 미취급"};
+    const mn = minPrice(it), mx = maxPrice(it);
+    if(allSame(it)){
+      const naCount = 3 - av.length;
+      const base = `세 곳 모두 ${won(mn)} · 동일`;
+      return {cls:"same", txt: naCount? `${won(mn)} · 취급점 동일` : base};
+    }
+    const cheapest = av.filter(x=>x.v===mn).map(x=>STORE_LABEL[x.k]);
+    return {cls:"", txt:`${cheapest.join("·")}가 가장 쌈 (${won(mn)}) · 최대 ${won(mx)}`};
+  }
+
+  function storeCellHtml(it, k, mn){
+    const v = storeVals(it)[k];
+    if(v==null){
+      return `<div class="store na ${STORE_CLASS[k]}"><div class="who">${STORE_LABEL[k]}</div><div class="amt">미취급</div></div>`;
+    }
+    const cheap = (v===mn && available(it).length>1 && !allSame(it));
+    return `<div class="store ${STORE_CLASS[k]} ${cheap?'cheap':''}">${cheap?`<span class="badge">최저가</span>`:``}<div class="who">${STORE_LABEL[k]}</div><div class="amt">${won(v)}</div></div>`;
+  }
+
+  function mineHtml(it){
+    const mp = minePrice(it);
+    const mn = minPrice(it);
+    let cls="todo", txt=`<span class="v todo">눌러서 입력</span><span class="tap">선택</span>`;
+    if(mp!=null){
+      if(mn!=null && mp>mn){ cls="over"; txt=`<span class="v over">${won(mp)}</span><span class="tap" style="color:var(--bad)">편의점보다 높음</span>`; }
+      else { cls="ok"; txt=`<span class="v ok">${won(mp)}</span><span class="tap" style="color:var(--good)">적정</span>`; }
+    }
+    return `<div class="mine"><span class="lab">우리 매점</span>
+      <div class="box ${mp!=null?'has':''}" data-edit="${it.i}" role="button" tabindex="0" aria-label="${esc(it.n)} 매점 가격 입력">${txt}</div></div>`;
+  }
+
+  function itemHtml(it){
+    const mn = minPrice(it);
+    const v = verdictText(it);
+    // 우리 매점가가 편의점 최저가보다 높으면 평가 줄도 빨갛게 덮어쓰기
+    const mp = minePrice(it);
+    let vcls = v.cls, vtxt = v.txt;
+    if(mp!=null && mn!=null && mp>mn){ vcls="mine-bad"; vtxt = `우리 매점이 편의점보다 비쌈 (우리 ${won(mp)} / 편의점 최저 ${won(mn)})`; }
+    return `
+    <article class="item" data-id="${it.i}">
+      <div class="item-name">
+        <h4>${esc(it.n)}${isFlag(it)?`<span class="flagdot">공문</span>`:``}</h4>
+        <span class="sz">${esc(it.s||"")}</span>
+      </div>
+      <div class="verdict ${vcls}">${esc(vtxt)}</div>
+      <div class="stores">
+        ${storeCellHtml(it,"cu",mn)}
+        ${storeCellHtml(it,"gs",mn)}
+        ${storeCellHtml(it,"se",mn)}
+      </div>
+      ${mineHtml(it)}
+    </article>`;
+  }
+
+  let view = { mode:"home", cat:"", text:"" };
+
+  function toast(msg){ const t=$("toast"); t.textContent=msg; t.classList.add("show");
+    clearTimeout(toast._t); toast._t=setTimeout(()=>t.classList.remove("show"),2200); }
+
+  function visibleItems(){
+    if(view.mode==="search"){ const t=norm(view.text); return CATALOG.filter(it=>norm(it.n+it.c+it.s).includes(t)); }
+    if(view.mode==="cat") return CATALOG.filter(it=>it.c===view.cat);
+    if(view.mode==="flag") return CATALOG.filter(isFlag);
+    return CATALOG.filter(isFlag); // home
+  }
+
+  function buildNav(){
+    let h="";
+    h += `<button class="all" data-go="home" type="button">처음 화면</button>`;
+    h += `<button class="flag" data-go="flag" type="button">공문 품목<span class="n">${CATALOG.filter(isFlag).length}</span></button>`;
+    for(const cat of CAT_ORDER){
+      h += `<button data-go="cat" data-cat="${esc(cat)}" type="button">${esc(cat)}<span class="n">${CATALOG.filter(x=>x.c===cat).length}</span></button>`;
+    }
+    $("nav").innerHTML=h;
+  }
+  function syncNav(){
+    document.querySelectorAll("#nav button").forEach(b=>{
+      const go=b.getAttribute("data-go"); let on=false;
+      if(go==="home") on=(view.mode==="home");
+      else if(go==="flag") on=(view.mode==="flag");
+      else if(go==="cat") on=(view.mode==="cat" && view.cat===b.getAttribute("data-cat"));
+      b.classList.toggle("on", on);
+    });
+  }
+
+  function render(){
+    const items=visibleItems();
+    if(view.mode==="search") $("navtitle").textContent=`검색 결과 (${items.length}개)`;
+    else if(view.mode==="home") $("navtitle").textContent="분류를 누르세요";
+    else if(view.mode==="flag") $("navtitle").textContent="공문에서 지적된 품목";
+    else $("navtitle").textContent=view.cat;
+
+    let html="";
+    if(view.mode==="search"||view.mode==="flag"){
+      for(const cat of CAT_ORDER){
+        const its=items.filter(x=>x.c===cat); if(!its.length) continue;
+        html += `<div class="cat"><h3>${esc(cat)}</h3><span class="count">${its.length}개</span></div><div class="grid">${its.map(itemHtml).join("")}</div>`;
+      }
+    } else if(view.mode==="cat"){
+      html += `<div class="cat"><h3>${esc(view.cat)}</h3><span class="count">${items.length}개</span></div><div class="grid">${items.map(itemHtml).join("")}</div>`;
+    } else {
+      html += `<div class="cat"><h3>먼저 확인할 품목</h3><span class="count">${items.length}개</span></div><div class="grid">${items.map(itemHtml).join("")}</div>`;
+    }
+    $("list").innerHTML=html;
+    $("empty").style.display=items.length?"none":"block";
+    syncNav();
+  }
+
+  function editPrice(id){
+    const it=CATALOG.find(x=>x.i===id); if(!it) return;
+    const mn=minPrice(it);
+    const cur=mine[it.i] ?? "";
+    const hint = mn!=null ? `편의점 최저가: ${won(mn)}` : `편의점 미취급 품목`;
+    const input=prompt(`${it.n} (${it.s||""})\n${hint}\n\n우리 매점 판매 가격을 숫자로 적어 주세요.`, cur);
+    if(input===null) return;
+    const c=String(input).replace(/[^0-9]/g,"");
+    if(c===""){ delete mine[it.i]; persist(); render(); toast("매점 가격을 비웠습니다."); return; }
+    mine[it.i]=Number(c); persist(); render();
+    const mp=Number(c);
+    toast((mn!=null&&mp>mn)?"편의점보다 높습니다.":"저장했습니다.");
+  }
+
+  function buildPrint(){
+    const now=new Date();
+    const stamp=now.toLocaleString("ko-KR",{year:"numeric",month:"long",day:"numeric",hour:"2-digit",minute:"2-digit"});
+    // PDF는 전체 3사 비교표(현재 보고 있는 목록 기준). 매점가 입력분은 함께 표기.
+    const items=visibleItems();
+    const scope = view.mode==="home"?"공문 품목":view.mode==="flag"?"공문 품목":view.mode==="search"?`검색: ${view.text}`:view.cat;
+    let rows="";
+    let curCat="";
+    for(const cat of CAT_ORDER){
+      const its=items.filter(x=>x.c===cat); if(!its.length) continue;
+      rows += `<tr class="cat-row"><td colspan="6">${esc(cat)}</td></tr>`;
+      for(const it of its){
+        const mn=minPrice(it);
+        const cell=(v)=> v==null?`<td>-</td>`:`<td class="${(v===mn&&!allSame(it)&&available(it).length>1)?'cheap':''}">${won(v)}</td>`;
+        const mp=minePrice(it);
+        const mineTd = mp==null?`<td>-</td>`:`<td class="${(mn!=null&&mp>mn)?'over':''}">${won(mp)}</td>`;
+        rows += `<tr><td class="name">${esc(it.n)} ${esc(it.s||"")}</td>${cell(it.cu)}${cell(it.gs)}${cell(it.se)}<td>${mn!=null?won(mn):"-"}</td>${mineTd}</tr>`;
+      }
+    }
+    const body = rows
+      ? `<table><thead><tr><th>품목</th><th>CU</th><th>GS25</th><th>세븐</th><th>최저가</th><th>우리매점</th></tr></thead><tbody>${rows}</tbody></table>
+         <div class="foot">※ 편의점 가격은 CU·GS25·세븐일레븐 정상 판매가격 기준 참고값입니다. 행사가격(1+1·2+1)·용량·점포 차이가 있을 수 있습니다. 초록=가장 싼 곳, 빨강=우리 매점이 더 비쌈.</div>`
+      : `<p style="font-size:13px">표시할 품목이 없습니다.</p>`;
+    $("print").innerHTML=`<h1>편의점 3사 가격 비교표</h1><div class="sub">작성일: ${esc(stamp)} · 범위: ${esc(scope)} · ${items.length}개 품목</div>${body}`;
+  }
+  function printPdf(){ buildPrint(); setTimeout(()=>window.print(),60); }
+
+  // 이벤트
+  let typingTimer;
+  $("q").addEventListener("input", e=>{
+    clearTimeout(typingTimer);
+    typingTimer=setTimeout(()=>{ const t=e.target.value.trim();
+      view = t? {mode:"search",cat:"",text:t} : {mode:"home",cat:"",text:""}; render(); },120);
+  });
+  $("nav").addEventListener("click", e=>{
+    const b=e.target.closest("button"); if(!b) return; $("q").value="";
+    const go=b.getAttribute("data-go");
+    if(go==="home") view={mode:"home",cat:"",text:""};
+    else if(go==="flag") view={mode:"flag",cat:"",text:""};
+    else if(go==="cat") view={mode:"cat",cat:b.getAttribute("data-cat"),text:""};
+    render(); window.scrollTo({top:0,behavior:"smooth"});
+  });
+  $("topBtn").addEventListener("click", ()=>window.scrollTo({top:0,behavior:"smooth"}));
+  $("pdfBtn").addEventListener("click", printPdf);
+  document.addEventListener("click", e=>{ const ed=e.target.closest("[data-edit]"); if(ed) editPrice(ed.getAttribute("data-edit")); });
+  document.addEventListener("keydown", e=>{
+    const t=e.target;
+    if((e.key==="Enter"||e.key===" ") && t.classList && t.classList.contains("box") && t.hasAttribute("data-edit")){
+      e.preventDefault(); editPrice(t.getAttribute("data-edit"));
+    }
+  });
+
+  buildNav();
+  render();
+})();
+</script>
+</body>
+</html>
